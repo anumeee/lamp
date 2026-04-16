@@ -2,8 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LampShape Studio — Генератор плафонов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Профессиональный генератор плафонов для 3D печати. Создавайте уникальные формы ламп с интуитивным интерфейсом.">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>LampShape Studio — Генератор плафонов для 3D печати</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -26,15 +28,20 @@
             --warning:#f59e0b;
             --radius:12px;
             --radius-lg:16px;
+            --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md:0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg:0 8px 32px rgba(0,0,0,0.5);
+            --transition:all .25s cubic-bezier(.4,0,.2,1);
         }
-        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         
         /* HEADER */
         .header{
             display:flex;align-items:center;justify-content:space-between;
-            padding:12px 24px;background:var(--surface);
+            padding:12px 24px;background:rgba(18,18,26,0.95);
             border-bottom:1px solid var(--border);z-index:100;
-            backdrop-filter:blur(12px);
+            backdrop-filter:blur(16px) saturate(180%);
+            -webkit-backdrop-filter:blur(16px) saturate(180%);
         }
         .logo{display:flex;align-items:center;gap:12px}
         .logo-icon{
@@ -42,18 +49,20 @@
             background:linear-gradient(135deg,var(--accent),#a855f7);
             display:flex;align-items:center;justify-content:center;
             box-shadow:0 4px 12px var(--accent-glow);
+            transition:transform .3s ease;
         }
+        .logo:hover .logo-icon{transform:rotate(-5deg) scale(1.05)}
         .logo-icon svg{width:20px;height:20px;fill:white}
-        .logo-text h1{font-size:16px;font-weight:700;background:linear-gradient(135deg,#fff,var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .logo-text span{font-size:11px;color:var(--text3)}
-        .header-actions{display:flex;gap:8px}
+        .logo-text h1{font-size:16px;font-weight:700;background:linear-gradient(135deg,#fff,var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .logo-text span{font-size:11px;color:var(--text3);display:block;margin-top:2px}
+        .header-actions{display:flex;gap:8px;align-items:center}
         
         /* BUTTONS */
         .btn{
             padding:10px 18px;border:none;border-radius:10px;cursor:pointer;
-            font-size:13px;font-weight:600;transition:all .25s cubic-bezier(.4,0,.2,1);
+            font-size:13px;font-weight:600;transition:var(--transition);
             display:flex;align-items:center;gap:8px;position:relative;overflow:hidden;
-            font-family:inherit;
+            font-family:inherit;user-select:none;-webkit-tap-highlight-color:transparent;
         }
         .btn::after{
             content:'';position:absolute;inset:0;
@@ -61,7 +70,8 @@
             opacity:0;transition:opacity .2s;
         }
         .btn:hover::after{opacity:1}
-        .btn:active{transform:scale(.97)}
+        .btn:active{transform:scale(.96)}
+        .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         .btn-primary{
             background:linear-gradient(135deg,var(--accent),#7c3aed);
             color:white;
@@ -78,6 +88,7 @@
         .btn-icon{padding:10px;width:40px;height:40px;justify-content:center}
         .btn-danger{background:var(--danger);color:white}
         .btn-success{background:var(--success);color:#0a0f}
+        .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
         
         /* LAYOUT */
         .main{display:flex;flex:1;overflow:hidden}
@@ -87,12 +98,21 @@
             width:320px;background:var(--surface);
             border-right:1px solid var(--border);
             display:flex;flex-direction:column;overflow:hidden;
+            transition:transform .3s ease;
         }
+        .sidebar.collapsed{transform:translateX(-100%);position:absolute;height:100%;z-index:50}
+        .sidebar-header{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:12px 16px;border-bottom:1px solid var(--border);
+        }
+        .sidebar-title{font-size:13px;font-weight:600;color:var(--text)}
+        .sidebar-toggle{display:none}
         .sidebar-content{flex:1;overflow-y:auto;padding:16px}
         .sidebar-content::-webkit-scrollbar{width:6px}
         .sidebar-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+        .sidebar-content::-webkit-scrollbar-track{background:transparent}
         
-        .section{margin-bottom:20px}
+        .section{margin-bottom:24px}
         .section-title{
             font-size:11px;text-transform:uppercase;letter-spacing:1.5px;
             color:var(--text3);margin-bottom:12px;font-weight:600;
@@ -101,10 +121,10 @@
         .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
         
         /* TEMPLATES */
-        .templates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .templates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
         .template{
-            padding:12px;background:var(--surface2);border:1px solid var(--border);
-            border-radius:10px;cursor:pointer;transition:all .2s;
+            padding:12px 8px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:10px;cursor:pointer;transition:var(--transition);
             display:flex;flex-direction:column;align-items:center;gap:6px;
             position:relative;overflow:hidden;
         }
@@ -113,12 +133,12 @@
             background:linear-gradient(135deg,var(--accent-glow),transparent);
             opacity:0;transition:opacity .2s;
         }
-        .template:hover{border-color:var(--accent);transform:translateY(-2px)}
+        .template:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-md)}
         .template:hover::before{opacity:1}
-        .template.active{border-color:var(--accent);background:var(--surface3)}
+        .template.active{border-color:var(--accent);background:var(--surface3);box-shadow:0 0 0 2px var(--accent-glow)}
         .template.active::before{opacity:1}
-        .template-icon{font-size:24px;position:relative;z-index:1}
-        .template-name{font-size:12px;font-weight:500;color:var(--text);position:relative;z-index:1}
+        .template-icon{font-size:22px;position:relative;z-index:1}
+        .template-name{font-size:11px;font-weight:500;color:var(--text);position:relative;z-index:1;text-align:center}
         
         /* CONTROLS */
         .control{margin-bottom:16px}
@@ -129,78 +149,92 @@
         .control-label{font-size:13px;font-weight:500;color:var(--text)}
         .control-value{
             font-size:12px;font-weight:600;color:var(--accent);
-            background:rgba(99,102,241,.1);padding:2px 8px;border-radius:6px;
+            background:rgba(99,102,241,.1);padding:4px 10px;border-radius:6px;
+            min-width:60px;text-align:right;
         }
         
         input[type="range"]{
             -webkit-appearance:none;width:100%;height:6px;
             border-radius:3px;background:var(--surface3);outline:none;
-            cursor:pointer;
+            cursor:pointer;transition:height .2s;
         }
+        input[type="range"]:hover{height:8px}
         input[type="range"]::-webkit-slider-thumb{
             -webkit-appearance:none;width:18px;height:18px;
             border-radius:50%;background:var(--accent);
             box-shadow:0 2px 8px var(--accent-glow);
-            transition:transform .2s;
+            transition:transform .2s,box-shadow .2s;
         }
-        input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+        input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 4px 12px var(--accent-glow)}
         input[type="range"]::-moz-range-thumb{
             width:18px;height:18px;border-radius:50%;
             background:var(--accent);border:none;
         }
+        input[type="range"]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         
         .toggle{
-            display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;
+            display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;
+            transition:background .2s;border-radius:8px;margin:0 -8px;padding:10px 8px;
         }
+        .toggle:hover{background:var(--surface2)}
         .toggle-switch{
-            width:40px;height:22px;border-radius:11px;
+            width:44px;height:24px;border-radius:12px;
             background:var(--surface3);position:relative;
             transition:background .2s;border:1px solid var(--border);
+            flex-shrink:0;
         }
         .toggle-switch::after{
-            content:'';position:absolute;width:16px;height:16px;
+            content:'';position:absolute;width:18px;height:18px;
             border-radius:50%;background:var(--text3);
-            top:2px;left:2px;transition:all .2s;
+            top:2px;left:2px;transition:all .2s cubic-bezier(.4,0,.2,1);
+            box-shadow:0 2px 4px rgba(0,0,0,.3);
         }
         .toggle.active .toggle-switch{background:var(--accent);border-color:var(--accent)}
         .toggle.active .toggle-switch::after{
-            transform:translateX(18px);background:white;
+            transform:translateX(20px);background:white;
         }
-        .toggle-text{font-size:13px;color:var(--text)}
+        .toggle-text{font-size:13px;color:var(--text);user-select:none}
         
         /* CENTER AREA */
-        .center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .center{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
         
         /* TOOLBAR */
         .toolbar{
             display:flex;align-items:center;gap:6px;
-            padding:10px 16px;background:var(--surface);
+            padding:10px 16px;background:rgba(18,18,26,0.95);
             border-bottom:1px solid var(--border);
+            backdrop-filter:blur(16px);
+            overflow-x:auto;flex-shrink:0;
         }
+        .toolbar::-webkit-scrollbar{height:4px}
+        .toolbar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
         .tool{
-            padding:8px 12px;border-radius:8px;cursor:pointer;
+            padding:8px 14px;border-radius:8px;cursor:pointer;
             font-size:12px;font-weight:500;color:var(--text2);
             background:transparent;border:1px solid transparent;
-            transition:all .2s;display:flex;align-items:center;gap:6px;
+            transition:var(--transition);display:flex;align-items:center;gap:6px;
+            white-space:nowrap;user-select:none;
         }
-        .tool:hover{color:var(--text);background:var(--surface2)}
+        .tool:hover{color:var(--text);background:var(--surface2);border-color:var(--border)}
         .tool.active{
             color:var(--accent);background:rgba(99,102,241,.1);
             border-color:rgba(99,102,241,.3);
         }
+        .tool:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         .tool-icon{font-size:16px}
-        .toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+        .toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 4px;flex-shrink:0}
         .toolbar-hint{
             margin-left:auto;font-size:11px;color:var(--text3);
-            display:flex;align-items:center;gap:6px;
+            display:flex;align-items:center;gap:6px;white-space:nowrap;
         }
         .toolbar-hint kbd{
-            background:var(--surface3);padding:2px 6px;border-radius:4px;
+            background:var(--surface3);padding:3px 7px;border-radius:5px;
             font-size:10px;border:1px solid var(--border);
+            font-family:inherit;
         }
         
         /* WORKSPACE */
-        .workspace{flex:1;display:flex;overflow:hidden}
+        .workspace{flex:1;display:flex;overflow:hidden;position:relative}
         .panel{
             flex:1;position:relative;display:flex;
             align-items:center;justify-content:center;
@@ -211,101 +245,205 @@
             position:absolute;top:12px;left:12px;
             font-size:11px;font-weight:600;text-transform:uppercase;
             letter-spacing:1px;color:var(--text3);
-            background:var(--surface);padding:6px 12px;
+            background:rgba(18,18,26,0.9);padding:6px 12px;
             border-radius:8px;border:1px solid var(--border);
-            backdrop-filter:blur(8px);z-index:10;
+            backdrop-filter:blur(12px);z-index:10;
+            pointer-events:none;
         }
         .panel-label .dot{
-            display:inline-block;width:6px;height:6px;
+            display:inline-block;width:8px;height:8px;
             border-radius:50%;margin-right:6px;
+            box-shadow:0 0 8px currentColor;
         }
-        .panel-label .dot.blue{background:#3b82f6}
-        .panel-label .dot.purple{background:var(--accent)}
-        #canvas2d{cursor:crosshair}
-        #canvas3d{width:100%;height:100%;display:block}
+        .panel-label .dot.blue{background:#3b82f6;color:#3b82f6}
+        .panel-label .dot.purple{background:var(--accent);color:var(--accent)}
+        #canvas2d{cursor:crosshair;touch-action:none}
+        #canvas3d{width:100%;height:100%;display:block;touch-action:none}
         
         /* STATUS BAR */
         .statusbar{
             display:flex;align-items:center;justify-content:space-between;
             padding:8px 20px;background:var(--surface);
             border-top:1px solid var(--border);font-size:11px;color:var(--text3);
+            flex-shrink:0;
         }
-        .status-left,.status-right{display:flex;align-items:center;gap:16px}
+        .status-left,.status-right{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
         .status-item{display:flex;align-items:center;gap:6px}
-        .status-dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
-        .status-value{color:var(--text);font-weight:500}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success)}
+        .status-value{color:var(--text);font-weight:600}
         
         /* MODAL */
         .modal-backdrop{
-            position:fixed;inset:0;background:rgba(0,0,0,.7);
+            position:fixed;inset:0;background:rgba(0,0,0,.75);
             z-index:1000;display:none;align-items:center;justify-content:center;
             backdrop-filter:blur(8px);
-            animation:fadeIn .2s;
+            animation:fadeIn .2s ease-out;
         }
         .modal-backdrop.active{display:flex}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes slideUp{from{transform:translateY(30px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
         .modal{
             background:var(--surface);border:1px solid var(--border);
-            border-radius:20px;padding:24px;width:400px;max-width:90vw;
+            border-radius:20px;padding:24px;width:420px;max-width:90vw;max-height:90vh;
             animation:slideUp .3s cubic-bezier(.4,0,.2,1);
+            overflow-y:auto;
+            box-shadow:var(--shadow-lg);
         }
-        .modal h2{font-size:20px;font-weight:700;margin-bottom:16px}
+        .modal h2{font-size:20px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
         .modal-info{
             background:var(--surface2);border:1px solid var(--border);
             border-radius:12px;padding:16px;margin-bottom:20px;
         }
         .modal-info-row{
             display:flex;justify-content:space-between;
-            padding:8px 0;border-bottom:1px solid var(--border);
+            padding:10px 0;border-bottom:1px solid var(--border);
             font-size:13px;
         }
         .modal-info-row:last-child{border-bottom:none}
         .modal-info-row .label{color:var(--text3)}
         .modal-info-row .value{color:var(--text);font-weight:600}
-        .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+        .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
         
         /* TOOLTIP */
         .tooltip{
             position:absolute;background:var(--surface2);
-            color:var(--text);padding:6px 10px;border-radius:8px;
+            color:var(--text);padding:8px 12px;border-radius:8px;
             font-size:12px;pointer-events:none;white-space:nowrap;
-            border:1px solid var(--border);z-index:50;
-            box-shadow:0 4px 12px rgba(0,0,0,.3);
+            border:1px solid var(--border);z-index:100;
+            box-shadow:var(--shadow-md);
+            opacity:0;transform:translateY(4px);transition:all .2s;
         }
+        .tooltip.visible{opacity:1;transform:translateY(0)}
+        
+        /* COLOR SWATCHES */
+        .color-grid{display:flex;gap:10px;flex-wrap:wrap}
+        .color-swatch{
+            width:40px;height:40px;border-radius:10px;cursor:pointer;
+            border:2px solid transparent;transition:var(--transition);
+            position:relative;overflow:hidden;
+        }
+        .color-swatch::after{
+            content:attr(data-name);
+            position:absolute;bottom:-20px;left:0;right:0;
+            font-size:9px;text-align:center;color:rgba(255,255,255,.9);
+            transition:bottom .2s;
+        }
+        .color-swatch:hover{transform:scale(1.15);border-color:var(--accent)}
+        .color-swatch:hover::after{bottom:4px}
+        .color-swatch.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .color-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+        
+        /* LOADING SPINNER */
+        .spinner{
+            width:20px;height:20px;border:2px solid var(--surface3);
+            border-top-color:var(--accent);border-radius:50%;
+            animation:spin .8s linear infinite;
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
         
         /* RESPONSIVE */
         @media(max-width:1024px){
             .sidebar{width:280px}
+            .templates{grid-template-columns:repeat(3,1fr)}
         }
         @media(max-width:768px){
+            .header{padding:10px 16px}
+            .logo-text h1{font-size:14px}
+            .logo-text span{font-size:10px}
+            .btn span{display:none}
+            .btn-icon-only{padding:10px;width:40px;justify-content:center}
+            
             .main{flex-direction:column}
             .sidebar{
-                width:100%;flex-direction:row;
+                width:100%;flex-direction:column;
                 border-right:none;border-bottom:1px solid var(--border);
-                max-height:150px;
+                max-height:none;position:static;
             }
+            .sidebar-header{display:flex}
+            .sidebar-toggle{display:flex}
             .sidebar-content{
-                display:flex;gap:16px;overflow-x:auto;
-                overflow-y:hidden;padding:12px;
+                display:flex;flex-direction:column;gap:20px;
+                overflow-x:visible;overflow-y:auto;padding:16px;
             }
-            .section{min-width:200px;margin-bottom:0}
+            .section{min-width:auto;margin-bottom:0}
+            .templates{grid-template-columns:repeat(3,1fr)}
             .workspace{flex-direction:column}
             .panel:first-child{border-right:none;border-bottom:1px solid var(--border)}
+            .panel{min-height:50vh}
+            .toolbar{padding:8px 12px}
+            .tool span:not(.tool-icon){display:none}
+            .toolbar-hint{display:none}
+            .statusbar{padding:6px 12px;font-size:10px;gap:8px}
+            .status-left,.status-right{gap:8px}
         }
-
-        /* ANIMATIONS */
-        .fade-in{animation:fadeIn .3s}
+        @media(max-width:480px){
+            .templates{grid-template-columns:repeat(3,1fr)}
+            .template{padding:10px 6px}
+            .template-icon{font-size:18px}
+            .template-name{font-size:10px}
+            .color-swatch{width:36px;height:36px}
+        }
         
-        /* CUSTOM CURSOR HINT */
+        /* ANIMATIONS */
+        .fade-in{animation:fadeIn .3s ease-out}
+        .pulse{animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+        
+        /* CURSOR HINT */
         .cursor-hint{
-            position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-            background:var(--surface);border:1px solid var(--border);
-            padding:8px 16px;border-radius:20px;font-size:11px;
+            position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+            background:rgba(18,18,26,0.95);border:1px solid var(--border);
+            padding:10px 18px;border-radius:24px;font-size:12px;
             color:var(--text2);white-space:nowrap;
             animation:pulse 2s infinite;
+            backdrop-filter:blur(8px);
+            pointer-events:none;
+            display:flex;align-items:center;gap:8px;
         }
-        @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+        
+        /* MOBILE MENU OVERLAY */
+        .overlay{
+            position:fixed;inset:0;background:rgba(0,0,0,.5);
+            z-index:40;opacity:0;pointer-events:none;transition:opacity .3s;
+            backdrop-filter:blur(4px);
+        }
+        .overlay.active{opacity:1;pointer-events:auto}
+        
+        /* UNDO HISTORY INDICATOR */
+        .history-indicator{
+            display:flex;align-items:center;gap:4px;
+            font-size:11px;color:var(--text3);
+        }
+        .history-dots{display:flex;gap:2px}
+        .history-dot{width:6px;height:6px;border-radius:50%;background:var(--border)}
+        .history-dot.filled{background:var(--accent)}
+        
+        /* SAVE/LOAD BUTTONS */
+        .project-actions{display:flex;gap:6px;margin-top:12px}
+        .project-btn{
+            flex:1;padding:8px;border-radius:8px;
+            background:var(--surface2);border:1px solid var(--border);
+            color:var(--text2);font-size:11px;cursor:pointer;
+            transition:var(--transition);display:flex;align-items:center;
+            justify-content:center;gap:6px;
+        }
+        .project-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--accent)}
+        
+        /* NOTIFICATION TOAST */
+        .toast{
+            position:fixed;bottom:80px;right:20px;
+            background:var(--surface2);border:1px solid var(--border);
+            padding:12px 18px;border-radius:12px;
+            box-shadow:var(--shadow-lg);
+            display:flex;align-items:center;gap:10px;
+            font-size:13px;z-index:1100;
+            transform:translateY(20px);opacity:0;
+            transition:all .3s cubic-bezier(.4,0,.2,1);
+        }
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast.success{border-color:var(--success)}
+        .toast.error{border-color:var(--danger)}
+        .toast-icon{font-size:16px}
     </style>
 </head>
 <body>
@@ -505,7 +643,7 @@
     </div>
 </div>
 
-<!-- STATUS BAR -->
+    <!-- STATUS BAR -->
 <div class="statusbar">
     <div class="status-left">
         <div class="status-item">
@@ -530,6 +668,13 @@
             <span>Размер файла:</span>
             <span class="status-value" id="stSize">—</span>
         </div>
+        <div class="status-item" style="margin-left:12px;padding-left:12px;border-left:1px solid var(--border)">
+            <span>🧮 Калькулятор:</span>
+            <button class="btn btn-ghost" onclick="showCalculatorModal()" style="padding:4px 8px;font-size:11px">Открыть</button>
+        </div>
+        <div class="status-item">
+            <button class="btn btn-ghost" onclick="showAnimationModal()" style="padding:4px 8px;font-size:11px">🎬 Анимация печати</button>
+        </div>
     </div>
 </div>
 
@@ -550,6 +695,116 @@
         <div class="modal-actions" style="margin-top:16px">
             <button class="btn btn-secondary" onclick="closeExportModal()">Отмена</button>
             <button class="btn btn-success" onclick="downloadSTL()">⬇️ Скачать STL</button>
+        </div>
+    </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="modal-backdrop" id="calculatorModal">
+    <div class="modal" style="width:520px;max-width:95vw">
+        <h2>🧮 Калькулятор 3D печати</h2>
+        <div class="modal-info">
+            <div class="modal-info-row"><span class="label">Объем пластика</span><span class="value" id="calcVolume">— см³</span></div>
+            <div class="modal-info-row"><span class="label">Масса пластика</span><span class="value" id="calcWeight">— г</span></div>
+            <div class="modal-info-row"><span class="label">Длина филамента</span><span class="value" id="calcLength">— м</span></div>
+            <div class="modal-info-row"><span class="label">Время печати</span><span class="value" id="calcTime">— ч</span></div>
+            <div class="modal-info-row"><span class="label">Стоимость материала</span><span class="value" id="calcCost">— ₽</span></div>
+            <div class="modal-info-row"><span class="label">Стоимость электроэнергии</span><span class="value" id="calcEnergy">— ₽</span></div>
+            <div class="modal-info-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px"><span class="label" style="font-weight:600;color:var(--accent)">Итоговая стоимость</span><span class="value" style="font-size:16px;color:var(--accent)" id="calcTotal">— ₽</span></div>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Тип пластика</span></div>
+            <select id="matType" onchange="calculateStats()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                <option value="1.24">PLA (1.24 г/см³)</option>
+                <option value="1.04">ABS (1.04 г/см³)</option>
+                <option value="1.27">PETG (1.27 г/см³)</option>
+                <option value="1.10">TPU (1.10 г/см³)</option>
+                <option value="1.35">Nylon (1.35 г/см³)</option>
+            </select>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Цена пластика (₽/кг)</span></div>
+            <input type="number" id="matPrice" value="1500" min="0" step="100" onchange="calculateStats()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Диаметр филамента (мм)</span></div>
+            <select id="filamentDia" onchange="calculateStats()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                <option value="1.75">1.75 мм</option>
+                <option value="2.85">2.85 мм</option>
+            </select>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Заполнение (%)</span></div>
+            <input type="range" id="infill" min="0" max="100" value="20" oninput="document.getElementById('infillVal').textContent=this.value+'%';calculateStats()" style="margin-bottom:8px">
+            <div style="text-align:right;font-size:12px;color:var(--accent);font-weight:600" id="infillVal">20%</div>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Скорость печати (мм/с)</span></div>
+            <input type="range" id="printSpeed" min="20" max="150" value="50" oninput="document.getElementById('speedVal').textContent=this.value+' мм/с';calculateStats()" style="margin-bottom:8px">
+            <div style="text-align:right;font-size:12px;color:var(--accent);font-weight:600" id="speedVal">50 мм/с</div>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Толщина слоя (мм)</span></div>
+            <select id="layerHeight" onchange="calculateStats()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                <option value="0.1">0.1 мм (высокое качество)</option>
+                <option value="0.2" selected>0.2 мм (стандарт)</option>
+                <option value="0.3">0.3 мм (быстро)</option>
+            </select>
+        </div>
+        <div class="control">
+            <div class="control-header"><span class="control-label">Электроэнергия (₽/кВт·ч)</span></div>
+            <input type="number" id="energyCost" value="5" min="0" step="0.5" onchange="calculateStats()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+        </div>
+        <div class="modal-actions" style="margin-top:16px">
+            <button class="btn btn-secondary" onclick="closeCalculatorModal()">Закрыть</button>
+            <button class="btn btn-primary" onclick="calculateStats()">🔄 Пересчитать</button>
+        </div>
+    </div>
+</div>
+
+<!-- ANIMATION MODAL -->
+<div class="modal-backdrop" id="animationModal">
+    <div class="modal" style="width:700px;max-width:95vw;padding:0;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">
+            <h2 style="margin:0">🎬 Анимация послойной печати</h2>
+            <button class="btn btn-ghost btn-icon" onclick="closeAnimationModal()">✕</button>
+        </div>
+        <div style="padding:24px">
+            <canvas id="animCanvas" style="width:100%;height:300px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)"></canvas>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
+                <button class="btn btn-primary" id="animPlayBtn" onclick="toggleAnimation()">▶️ Старт</button>
+                <button class="btn btn-secondary" onclick="resetAnimation()">🔄 Сброс</button>
+                <div style="flex:1">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--text3)">
+                        <span>Прогресс печати</span>
+                        <span id="animProgress">0%</span>
+                    </div>
+                    <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden">
+                        <div id="animBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#a855f7);transition:width .1s"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px">
+                <div style="background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border)">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Слоев всего</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--text)" id="animTotalLayers">—</div>
+                </div>
+                <div style="background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border)">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Текущий слой</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--accent)" id="animCurrentLayer">—</div>
+                </div>
+                <div style="background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border)">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Высота модели</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--text)" id="animHeight">— мм</div>
+                </div>
+                <div style="background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border)">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Толщина слоя</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--text)" id="animLayerHeight">0.2 мм</div>
+                </div>
+            </div>
+            <div style="margin-top:16px;font-size:12px;color:var(--text3)">
+                💡 <strong>Совет:</strong> Анимация показывает процесс послойного наращивания модели. Скорость можно изменить в настройках калькулятора.
+            </div>
         </div>
     </div>
 </div>
@@ -1235,6 +1490,303 @@ function downloadASCII(tris){
 // ==================== STATUS ====================
 function updateStatus(){
     document.getElementById('stPoints').textContent=profilePoints.length;
+}
+
+// ==================== CALCULATOR ====================
+let currentVolume = 0; // cm³
+
+function showCalculatorModal(){
+    if(profilePoints.length < 2){
+        alert('Сначала создайте профиль плафона!');
+        return;
+    }
+    calculateStats();
+    document.getElementById('calculatorModal').classList.add('active');
+}
+
+function closeCalculatorModal(){
+    document.getElementById('calculatorModal').classList.remove('active');
+}
+
+function calculateStats(){
+    if(profilePoints.length < 2) return;
+    
+    // Calculate volume using the profile points
+    const segs = +document.getElementById('pSegs').value;
+    const thick = +document.getElementById('pWall').value;
+    const bottom = document.getElementById('optBottom').classList.contains('active');
+    const smooth = document.getElementById('optSmooth').classList.contains('active');
+    
+    let pts = smooth ? smoothInterp(profilePoints, 20) : [...profilePoints];
+    pts.sort((a,b) => b[1] - a[1]);
+    
+    // Calculate outer and inner volumes using disk method
+    let outerVol = 0, innerVol = 0;
+    
+    for(let i = 0; i < pts.length - 1; i++){
+        const r1 = pts[i][0], r2 = pts[i+1][0];
+        const h = Math.abs(pts[i][1] - pts[i+1][1]);
+        // Volume of truncated cone: V = πh/3 * (R² + Rr + r²)
+        outerVol += Math.PI * h / 3 * (r1*r1 + r1*r2 + r2*r2);
+        
+        // Inner volume (hollow part)
+        const ir1 = Math.max(0, r1 - thick);
+        const ir2 = Math.max(0, r2 - thick);
+        if(ir1 > 0 || ir2 > 0){
+            innerVol += Math.PI * h / 3 * (ir1*ir1 + ir1*ir2 + ir2*ir2);
+        }
+    }
+    
+    // Plastic volume in mm³
+    let plasticVol = outerVol - innerVol;
+    
+    // Add bottom cap volume if enabled
+    if(bottom && pts.length > 0){
+        const baseR = pts[pts.length-1][0];
+        const baseThickness = thick;
+        plasticVol += Math.PI * baseR * baseR * baseThickness;
+    }
+    
+    // Apply infill percentage
+    const infill = +document.getElementById('infill').value / 100;
+    plasticVol = plasticVol * (0.3 + infill * 0.7); // Shell + infill
+    
+    // Convert to cm³
+    currentVolume = plasticVol / 1000;
+    
+    // Get material density
+    const density = parseFloat(document.getElementById('matType').value);
+    
+    // Calculate weight
+    const weight = currentVolume * density;
+    
+    // Calculate filament length
+    const filamentDia = parseFloat(document.getElementById('filamentDia').value);
+    const filamentRadius = filamentDia / 2 / 10; // cm
+    const filamentCrossSection = Math.PI * filamentRadius * filamentRadius;
+    const lengthM = (currentVolume / filamentCrossSection) / 100;
+    
+    // Calculate print time
+    const layerHeight = parseFloat(document.getElementById('layerHeight').value);
+    const printSpeed = parseFloat(document.getElementById('printSpeed').value); // mm/s
+    const modelHeight = pts[0][1] - pts[pts.length-1][1];
+    const totalLayers = modelHeight / layerHeight;
+    
+    // Estimate: each layer takes perimeter * speed time
+    const avgPerimeter = 2 * Math.PI * (pts.reduce((sum,p) => sum + p[0], 0) / pts.length);
+    const timePerLayer = (avgPerimeter / printSpeed) + 0.5; // + travel time
+    const totalTimeHours = (timePerLayer * totalLayers) / 3600;
+    
+    // Calculate costs
+    const matPrice = parseFloat(document.getElementById('matPrice').value);
+    const materialCost = (weight / 1000) * matPrice;
+    
+    const energyCost = parseFloat(document.getElementById('energyCost').value);
+    const powerConsumption = 0.2; // kW average for 3D printer
+    const energyCostTotal = totalTimeHours * powerConsumption * energyCost;
+    
+    const totalCost = materialCost + energyCostTotal;
+    
+    // Update UI
+    document.getElementById('calcVolume').textContent = currentVolume.toFixed(1) + ' см³';
+    document.getElementById('calcWeight').textContent = weight.toFixed(1) + ' г';
+    document.getElementById('calcLength').textContent = lengthM.toFixed(1) + ' м';
+    document.getElementById('calcTime').textContent = totalTimeHours.toFixed(1) + ' ч';
+    document.getElementById('calcCost').textContent = materialCost.toFixed(2) + ' ₽';
+    document.getElementById('calcEnergy').textContent = energyCostTotal.toFixed(2) + ' ₽';
+    document.getElementById('calcTotal').textContent = totalCost.toFixed(2) + ' ₽';
+    
+    // Update animation stats
+    document.getElementById('animTotalLayers').textContent = Math.round(totalLayers).toLocaleString();
+    document.getElementById('animHeight').textContent = Math.round(modelHeight) + ' мм';
+    document.getElementById('animLayerHeight').textContent = layerHeight + ' мм';
+}
+
+// ==================== ANIMATION ====================
+let animCanvas, animCtx;
+let animRunning = false;
+let animFrame = 0;
+let animTotalFrames = 100;
+let animInterval = null;
+
+function showAnimationModal(){
+    if(profilePoints.length < 2){
+        alert('Сначала создайте профиль плафона!');
+        return;
+    }
+    document.getElementById('animationModal').classList.add('active');
+    initAnimation();
+}
+
+function closeAnimationModal(){
+    stopAnimation();
+    document.getElementById('animationModal').classList.remove('active');
+}
+
+function initAnimation(){
+    animCanvas = document.getElementById('animCanvas');
+    animCtx = animCanvas.getContext('2d');
+    
+    // Set canvas size
+    const rect = animCanvas.getBoundingClientRect();
+    animCanvas.width = rect.width * 2;
+    animCanvas.height = rect.height * 2;
+    animCtx.scale(2, 2);
+    
+    resetAnimation();
+}
+
+function resetAnimation(){
+    stopAnimation();
+    animFrame = 0;
+    document.getElementById('animPlayBtn').innerHTML = '▶️ Старт';
+    document.getElementById('animBar').style.width = '0%';
+    document.getElementById('animProgress').textContent = '0%';
+    document.getElementById('animCurrentLayer').textContent = '—';
+    drawAnimationFrame(0);
+}
+
+function toggleAnimation(){
+    if(animRunning){
+        stopAnimation();
+    } else {
+        startAnimation();
+    }
+}
+
+function startAnimation(){
+    if(animFrame >= animTotalFrames){
+        animFrame = 0;
+    }
+    animRunning = true;
+    document.getElementById('animPlayBtn').innerHTML = '⏸️ Пауза';
+    
+    const layerHeight = parseFloat(document.getElementById('layerHeight').value);
+    const pts = profilePoints;
+    if(pts.length < 2) return;
+    
+    const modelHeight = pts[0][1] - pts[pts.length-1][1];
+    const totalLayers = modelHeight / layerHeight;
+    animTotalFrames = Math.min(200, Math.floor(totalLayers));
+    
+    animInterval = setInterval(() => {
+        animFrame++;
+        const progress = (animFrame / animTotalFrames) * 100;
+        document.getElementById('animBar').style.width = progress + '%';
+        document.getElementById('animProgress').textContent = Math.round(progress) + '%';
+        document.getElementById('animCurrentLayer').textContent = animFrame + ' / ' + animTotalFrames;
+        
+        drawAnimationFrame(animFrame / animTotalFrames);
+        
+        if(animFrame >= animTotalFrames){
+            stopAnimation();
+            document.getElementById('animPlayBtn').innerHTML = '✅ Готово';
+        }
+    }, 50);
+}
+
+function stopAnimation(){
+    animRunning = false;
+    document.getElementById('animPlayBtn').innerHTML = '▶️ Продолжить';
+    if(animInterval){
+        clearInterval(animInterval);
+        animInterval = null;
+    }
+}
+
+function drawAnimationFrame(progress){
+    const w = animCanvas.width / 2;
+    const h = animCanvas.height / 2;
+    const ctx = animCtx;
+    
+    ctx.clearRect(0, 0, w, h);
+    
+    // Background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, '#1a1a28');
+    bgGrad.addColorStop(1, '#12121a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+    
+    if(profilePoints.length < 2) return;
+    
+    // Calculate current height
+    const pts = [...profilePoints].sort((a,b) => b[1] - a[1]);
+    const modelHeight = pts[0][1] - pts[pts.length-1][1];
+    const currentHeight = modelHeight * progress;
+    
+    // Draw axis
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(w/2, 10);
+    ctx.lineTo(w/2, h - 10);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Draw current layer build-up
+    const layersToShow = Math.floor(progress * 20);
+    const layerHeight = modelHeight / 20;
+    
+    for(let l = 0; l <= layersToShow; l++){
+        const layerY = h - 20 - (l * layerHeight * (h - 40) / modelHeight);
+        const t = l / 20;
+        
+        // Find radius at this height
+        let radius = 0;
+        for(let i = 0; i < pts.length - 1; i++){
+            const y1 = pts[i][1], y2 = pts[i+1][1];
+            const r1 = pts[i][0], r2 = pts[i+1][0];
+            if(t * modelHeight >= y2 && t * modelHeight <= y1){
+                const lt = (t * modelHeight - y2) / (y1 - y2);
+                radius = r2 + (r1 - r2) * lt;
+                break;
+            }
+        }
+        
+        // Draw layer cross-section
+        const scaleX = (w - 60) / Math.max(...pts.map(p => p[0]));
+        const layerX = w/2;
+        const layerW = radius * scaleX;
+        
+        // Layer fill
+        const layerGrad = ctx.createLinearGradient(layerX - layerW, layerY - 3, layerX + layerW, layerY + 3);
+        layerGrad.addColorStop(0, '#6366f1');
+        layerGrad.addColorStop(0.5, '#818cf8');
+        layerGrad.addColorStop(1, '#6366f1');
+        ctx.fillStyle = layerGrad;
+        ctx.fillRect(layerX - layerW, layerY - 3, layerW * 2, 6);
+        
+        // Layer outline
+        ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(layerX - layerW, layerY - 3, layerW * 2, 6);
+    }
+    
+    // Draw nozzle
+    const nozzleY = h - 20 - (progress * (h - 40));
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(w/2 - 8, nozzleY - 15);
+    ctx.lineTo(w/2 + 8, nozzleY - 15);
+    ctx.lineTo(w/2, nozzleY - 5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Nozzle glow
+    ctx.shadowColor = '#f59e0b';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(w/2, nozzleY - 8, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Info overlay
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '12px Inter';
+    ctx.fillText(`Слой ${Math.floor(progress * 100)}%`, 20, 25);
 }
 </script>
 </body>
